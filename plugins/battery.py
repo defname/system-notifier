@@ -29,7 +29,6 @@ class Plugin:
 
         self.bus = ctx.system_bus
 
-
         self.messages = {
             "on": self.ctx.get_config("on_message", fallback=ON_MESSAGE),
             "off": self.ctx.get_config("off_message", fallback=OFF_MESSAGE),
@@ -38,10 +37,10 @@ class Plugin:
         }
 
         self.icons = {
-            "on": self.ctx.get_config("on_icon", fallback=ON_ICON),
-            "off": self.ctx.get_config("off_icon", fallback=OFF_ICON),
-            "low": self.ctx.get_config("low_icon", fallback=LOW_ICON),
-            "critical": self.ctx.get_config("critical_icon", fallback=CRITICAL_ICON),
+            "on": self.ctx.get_icon("on_icon", fallback=ON_ICON),
+            "off": self.ctx.get_icon("off_icon", fallback=OFF_ICON),
+            "low": self.ctx.get_icon("low_icon", fallback=LOW_ICON),
+            "critical": self.ctx.get_icon("critical_icon", fallback=CRITICAL_ICON),
         }
 
         self.find_devices_and_setup_signals()

@@ -19,6 +19,7 @@ The project comes with a few plugins:
     *   Critical battery level.
 *   **volume_pactl**: Monitors volume changes using the `pactl` command-line tool. It shows a notification with a progress bar when the volume is changed or muted.
 *   **iwd**: Monitors network connections using iwd.
+*   **brightness**: Monitors screen brightness changes and shows a notification with a progress bar.
 *   **Dummy**: A simple boilerplate for creating new plugins.
 
 ## Dependencies
@@ -26,14 +27,21 @@ The project comes with a few plugins:
 The script requires the following:
 
 *   Python 3
-*   `dbus-python`
+*   `pydbus`
 *   `PyGObject`
+*   `cairosvg`
+*   `lxml`
 *   GObject introspection bindings for `Notify` (`gir1.2-notify-0.7`)
 
 On a Debian-based system, you can install these with:
 
 ```bash
 sudo apt-get install python3-gi python3-dbus gir1.2-notify-0.7
+```
+
+And the python libraries via pip:
+```bash
+pip install pydbus cairosvg lxml
 ```
 
 The `volume_pactl` plugin also requires `pactl`, which is usually included in the `pulseaudio-utils` package:
@@ -67,7 +75,15 @@ Here is an example configuration:
 
 ```ini
 [main]
-enabled_plugins = battery, volume_pactl, iwd
+# A comma-separated list of plugins to load.
+enabled_plugins = battery, volume_pactl, iwd, brightness
+# The default timeout for notifications in milliseconds.
+# This can be overwritten by individual plugins.
+timeout = 1000
+# A directory to search for icons if they are not given as a full path.
+icon_theme_dir = /usr/share/icons/Cosmic/scalable/
+# The directory where icons are cached.
+icon_cache_dir = .icon_cache
 
 [battery]
 on_message = Power adapter connected
@@ -84,10 +100,24 @@ high_icon = audio-volume-high
 medium_icon = audio-volume-medium
 low_icon = audio-volume-low
 muted_icon = audio-volume-muted
+
+[iwd]
+connected_icon = network-wireless
+disconnected_icon = network-wireless-offline
+connected_message = Connected to {ssid}
+disconnected_message = Network disconnected
+
+[brightness]
+high_icon = display-brightness-high-symbolic
+medium_icon = display-brightness-medium-symbolic
+low_icon = display-brightness-low-symbolic
 ```
 
-The `[main]` section has one option:
+The `[main]` section has the following options:
 *   `enabled_plugins`: A comma-separated list of plugins to load.
+*   `timeout`: The default timeout for notifications in milliseconds. This can be overwritten by individual plugins.
+*   `icon_theme_dir`: A directory to search for icons if they are not given as a full path.
+*   `icon_cache_dir`: The directory where icons are cached.
 
 Each plugin can have its own section (e.g., `[battery]`) for its specific configuration options.
 
@@ -102,6 +132,8 @@ You can easily create your own plugins:
     *   `log()`: A logging helper.
     *   `get_config()`: A method to read from the plugin's configuration section.
     *   `notify()`: A method to send desktop notifications.
+    *   `close_notification()`: A method to close a previously sent notification.
+    *   `get_icon()`: A helper to get an icon from the configured theme or a fallback.
     *   `system_bus`: A D-Bus system bus connection.
     *   `session_bus`: A D-Bus session bus connection.
 

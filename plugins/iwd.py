@@ -15,8 +15,10 @@ class Plugin:
         self.bus = context.system_bus  # iwd is on the system bus
         self.subscriptions = {}
         # --- Configuration ---
-        self.connected_icon = self.ctx.get_config("connected_icon", fallback="network-wireless")
-        self.disconnected_icon = self.ctx.get_config("disconnected_icon", fallback="network-wireless-offline")
+        self.connected_icon = self.ctx.get_icon("connected_icon", fallback="network-wireless-connected")
+        self.disconnected_icon = self.ctx.get_icon("disconnected_icon", fallback="network-wireless-offline")
+        self.connected_message = self.ctx.get_config("connected_message", fallback="Connected to {ssid}")
+        self.disconnected_message = self.ctx.get_config("disconnected_message", fallback="Network disconnected")
 
         self.ctx.log("Initializing iwd plugin...")
         self.setup_iwd_signals()
@@ -97,12 +99,12 @@ class Plugin:
                 if network_path != '/':
                     network_proxy = self.bus.get(IWD_BUS_NAME, network_path)
                     ssid = network_proxy.Name
-                    summary = f"Connected to {ssid}"
+                    summary = self.connected_message.format(ssid=ssid)
                     self.ctx.notify(summary=summary, icon=self.connected_icon, replace_id=NOTIFICATION_ID)
             except Exception as e:
                 self.ctx.log(f"Error getting network details: {e}")
-                self.ctx.notify(summary="Connected to network", icon=self.connected_icon, replace_id=NOTIFICATION_ID)
+                self.ctx.notify(summary=self.connected_message.format(ssid="network"), icon=self.connected_icon, replace_id=NOTIFICATION_ID)
 
         elif state == 'disconnected':
-            summary = "Network disconnected"
+            summary = self.disconnected_message
             self.ctx.notify(summary=summary, icon=self.disconnected_icon, replace_id=NOTIFICATION_ID)

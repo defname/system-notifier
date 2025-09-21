@@ -1,2 +1,4 @@
-dbus-python
+pydbus
 PyGObject
+cairosvg
+lxml
