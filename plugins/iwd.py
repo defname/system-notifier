@@ -1,5 +1,6 @@
 """Plugin to show network connection changes from iwd."""
 from main import PluginContext
+import pydbus
 
 # D-Bus constants
 IWD_BUS_NAME = "net.connman.iwd"
@@ -12,7 +13,7 @@ NOTIFICATION_ID = "iwd_notification_789789"
 class Plugin:
     def __init__(self, context: PluginContext):
         self.ctx = context
-        self.bus = context.system_bus  # iwd is on the system bus
+        self.bus = pydbus.SystemBus()  # iwd is on the system bus
         self.subscriptions = {}
         # --- Configuration ---
         self.connected_icon = self.ctx.get_icon("connected_icon", fallback="network-wireless-connected")

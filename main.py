@@ -28,38 +28,37 @@ def init_argparse():
     parser.add_argument("--plugins", "-p", type=str, default="", help="give a list of plugins to load. If set the enabled_plugins option in the config file will be ignored.")
     return parser
 
-def main():
-    """Global entry point"""
-    # command line argumnts
-    argparser = init_argparse()
-    try:
-        args = argparser.parse_args()
-    except argparse.ArgumentError:
-        return
-
-    # load config
+def load_config(config_file: str):
     config = configparser.ConfigParser()
     loaded_files: list[str]
-    if args.config:
-        loaded_files = config.read(args.config)
+    if config_file:
+        loaded_files = config.read(config_file)
         if not loaded_files:
-            log(f"Config file {args.config} not found.")
-            return
+            log(f"Config file {config_file} not found.")
+            sys.exit(1)
     else:
         loaded_files = config.read(CONFIG_FILES)
         if not loaded_files:
             log("No configuration files found.")
+    return config
 
-    # init dbus and GLib Main Loop
-    system_bus = pydbus.SystemBus()
-    session_bus = pydbus.SessionBus()
+def main():
+    """Global entry point"""
+    # command line argumnts
+    argparser = init_argparse()
+    args = argparser.parse_args()
+
+    # load config
+    config = load_config(args.config)
+
+    # GLib Main Loop
     DBusGMainLoop(set_as_default=True)
 
     # init libnotify
     Notify.init(PROG_NAME)
 
     # available_plugin_files = [f for f in os.listdir(plugin_dir) if f.endswith(".py") and not f.startswith("__")]
-    loaded_plugins = load_plugins(config, system_bus, session_bus, plugin_list=args.plugins)
+    loaded_plugins = load_plugins(config, plugin_list=args.plugins)
 
     if not loaded_plugins:
         log("No plugins loaded. Exiting.")

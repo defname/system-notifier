@@ -1,6 +1,7 @@
 """Plugin to show power supply and battery notifications."""
 
 from main import PluginContext
+import pydbus
 
 # fallback configuration
 ON_MESSAGE = "Netzteil angeschlossen"
@@ -27,7 +28,7 @@ class Plugin:
     def __init__(self, ctx: PluginContext):
         self.ctx = ctx
 
-        self.bus = ctx.system_bus
+        self.bus = pydbus.SystemBus()
 
         self.messages = {
             "on": self.ctx.get_config("on_message", fallback=ON_MESSAGE),

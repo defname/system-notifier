@@ -2,6 +2,8 @@
 """
 Plugin to show volume notifications.
 Every attempt to use DBus failed, so it works with pactl instead...
+
+It notifies about volume changes of the defaul sink.
 """
 
 import re
@@ -45,7 +47,6 @@ class Plugin:
     def on_pactl_event(self, stream, condition):
         line = stream.readline()
         if line and f"Event 'change' on sink #{self.default_sink_idx}" == line.strip():
-            print(line)
             self.ctx.log("Sink event detected")
             self.update_volume_notification()
         return True  # Keep the watch active

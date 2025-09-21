@@ -4,7 +4,6 @@ from utils.icon_loader import get_icon
 
 from typing import Literal
 import importlib
-import pydbus
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_version("Notify", "0.7")
@@ -15,11 +14,9 @@ from gi.repository import GLib
 
 class PluginContext:
     """A container for shared ressources passed to each plugin."""
-    def __init__(self, plugin_name, config, system_bus: pydbus.SystemBus, session_bus: pydbus.SessionBus):
+    def __init__(self, plugin_name, config):
         self.config = config
         self.plugin = plugin_name
-        self.system_bus = system_bus
-        self.session_bus = session_bus
 
         self.cache_dir = self.config.get("main", "cache_dir", fallback=ICON_CACHE_DIR)
         self.theme_dir = self.config.get("main", "icon_theme_dir", fallback=ICON_THEME_DIR)
@@ -84,7 +81,7 @@ class PluginContext:
         final_name = self.get_config(config_key, fallback=fallback)
         return get_icon(final_name, self.theme_dir, self.cache_dir)
 
-def load_plugins(config, system_bus, session_bus, plugin_list=""):
+def load_plugins(config, plugin_list=""):
     """Loads all enabled plugins from the 'plugins' directory."""
     enabled_plugins = ""
     if plugin_list:
@@ -101,7 +98,7 @@ def load_plugins(config, system_bus, session_bus, plugin_list=""):
         try:
             module = importlib.import_module(module_name)
             if hasattr(module, 'Plugin'):
-                context = PluginContext(plugin_name, config, system_bus, session_bus)
+                context = PluginContext(plugin_name, config)
                 plugin_instance = module.Plugin(context)
                 loaded_plugins.append(plugin_instance)
                 log("Plugin loaded", tag=plugin_name)

@@ -6,9 +6,9 @@ This plugin is intended as a template and extended documentation for creating
 your own plugins. When activated, it performs a series of actions to
 demonstrate the various functions of the `ctx` object passed to the constructor.
 """
-import time
 from gi.repository import GLib
 from main import PluginContext
+import pydbus
 
 # Unique ID for replaceable notifications.
 # Used to update an existing notification instead of creating a new one.
@@ -159,7 +159,7 @@ class Plugin:
         try:
             # --- Session Bus ---
             # Example: Query the owner of the D-Bus service itself.
-            session_dbus_proxy = self.ctx.session_bus.get("org.freedesktop.DBus")
+            session_dbus_proxy = pydbus.SystemBus().get("org.freedesktop.DBus")
             owner = session_dbus_proxy.GetNameOwner("org.freedesktop.DBus")
             self.ctx.log(f"D-Bus session service is owned by: {owner}")
 

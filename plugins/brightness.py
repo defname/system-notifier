@@ -2,6 +2,7 @@
 
 import os
 from main import PluginContext
+import pydbus
 
 # fallback configuration
 BRIGHTNESS_HIGH_ICON = "display-brightness-high-symbolic"
@@ -17,7 +18,7 @@ class Plugin:
         self.low_icon = self.ctx.get_icon("low_icon", fallback=BRIGHTNESS_LOW_ICON)
 
         try:
-            self.ctx.system_bus.subscribe(
+            pydbus.SystemBus().subscribe(
                 iface="org.freedesktop.DBus.Properties",
                 signal="PropertiesChanged",
                 signal_fired=self.on_properties_changed
