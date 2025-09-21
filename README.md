@@ -17,7 +17,8 @@ The project comes with a few plugins:
     *   AC adapter plugged in/unplugged.
     *   Low battery level.
     *   Critical battery level.
-*   **Volume**: A placeholder for a volume change notifier.
+*   **volume_pactl**: Monitors volume changes using the `pactl` command-line tool. It shows a notification with a progress bar when the volume is changed or muted.
+*   **iwd**: Monitors network connections using iwd.
 *   **Dummy**: A simple boilerplate for creating new plugins.
 
 ## Dependencies
@@ -25,14 +26,19 @@ The project comes with a few plugins:
 The script requires the following:
 
 *   Python 3
-*   `python3-dbus`
-*   `python3-gi`
+*   `dbus-python`
+*   `PyGObject`
 *   GObject introspection bindings for `Notify` (`gir1.2-notify-0.7`)
 
 On a Debian-based system, you can install these with:
 
 ```bash
 sudo apt-get install python3-gi python3-dbus gir1.2-notify-0.7
+```
+
+The `volume_pactl` plugin also requires `pactl`, which is usually included in the `pulseaudio-utils` package:
+```bash
+sudo apt-get install pulseaudio-utils
 ```
 
 ## Installation
@@ -50,7 +56,7 @@ sudo apt-get install python3-gi python3-dbus gir1.2-notify-0.7
 
 2.  Run the script:
     ```bash
-    ./main.py
+    python3 main.py
     ```
 
 ### Configuration
@@ -61,7 +67,7 @@ Here is an example configuration:
 
 ```ini
 [main]
-enabled_plugins = battery, volume
+enabled_plugins = battery, volume_pactl, iwd
 
 [battery]
 on_message = Power adapter connected
@@ -72,6 +78,12 @@ on_icon = ac-adapter
 off_icon = battery-full
 low_icon = battery-low
 critical_icon = battery-caution
+
+[volume_pactl]
+high_icon = audio-volume-high
+medium_icon = audio-volume-medium
+low_icon = audio-volume-low
+muted_icon = audio-volume-muted
 ```
 
 The `[main]` section has one option:
