@@ -16,6 +16,7 @@
 # along with system-notifier.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import os # Added for path expansion
 import configparser
 import argparse
 from dbus.mainloop.glib import DBusGMainLoop
@@ -44,14 +45,20 @@ def load_config(config_file: str):
     config = configparser.ConfigParser()
     loaded_files: list[str]
     if config_file:
-        loaded_files = config.read(config_file)
+        # Expand user for the explicitly provided config file
+        expanded_config_file = os.path.expanduser(config_file)
+        loaded_files = config.read(expanded_config_file)
         if not loaded_files:
-            log(f"Config file {config_file} not found.")
+            log(f"Config file {expanded_config_file} not found.")
             sys.exit(1)
+        log(f"Config loaded from: {expanded_config_file}")
     else:
-        loaded_files = config.read(CONFIG_FILES)
+        # Expand user for all paths in CONFIG_FILES
+        expanded_config_files = [os.path.expanduser(f) for f in CONFIG_FILES]
+        loaded_files = config.read(expanded_config_files)
         if not loaded_files:
             log("No configuration files found.")
+        log(f"Config loaded from: {", ".join(loaded_files)}")
     return config
 
 def main():

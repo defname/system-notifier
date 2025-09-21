@@ -18,7 +18,7 @@ import sys
 PROG_NAME    = "system-notifier"
 APP_VERSION      = "0.1"
 
-CONFIG_FILES = ["config.ini", ]
+CONFIG_FILES = ["config.ini", "~/.config/system-notifier/config.ini"]
 LOG_FILE = sys.stderr
 LOG_TAG_WIDTH = 10
 DEFAULT_PLUGIN_LIST = "battery, volume_pactl, iwd"
