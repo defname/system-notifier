@@ -1,3 +1,17 @@
+# This file is part of system-notifier.
+#
+# system-notifier is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# system-notifier is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with system-notifier.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 Plugin to show volume notifications.
@@ -33,6 +47,9 @@ class Plugin:
         self.last_volume = 0
 
         self.default_sink_idx = self.get_default_sink_index()
+        if self.default_sink_idx is None:
+            self.ctx.log("Default sink not found. This plugin will not work.")
+            return
 
         try:
             # Start pactl subscribe and watch its output
@@ -52,23 +69,27 @@ class Plugin:
         return True  # Keep the watch active
 
     def get_default_sink_index(self):
-        # Default-Sink-Namen ermitteln
-        sink_name = subprocess.check_output(
-            ["pactl", "get-default-sink"],
-            text=True
-        ).strip()
+        try:
+            # Default-Sink-Namen ermitteln
+            sink_name = subprocess.check_output(
+                ["pactl", "get-default-sink"],
+                text=True
+            ).strip()
 
-        # Alle Sinks listen und Index zum Namen suchen
-        sinks = subprocess.check_output(
-            ["pactl", "list", "sinks", "short"],
-            text=True
-        ).splitlines()
+            # Alle Sinks listen und Index zum Namen suchen
+            sinks = subprocess.check_output(
+                ["pactl", "list", "sinks", "short"],
+                text=True
+            ).splitlines()
 
-        for line in sinks:
-            idx, name, *_ = line.split()
-            if name == sink_name:
-                return int(idx)
-        return None
+            for line in sinks:
+                idx, name, *_ = line.split()
+                if name == sink_name:
+                    return int(idx)
+            return None
+        except (FileNotFoundError, subprocess.CalledProcessError) as e:
+            self.ctx.log(f"Error getting default sink: {e}")
+            return None
 
     def update_volume_notification(self):
         try:

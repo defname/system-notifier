@@ -1,3 +1,18 @@
+# This file is part of system-notifier.
+#
+# system-notifier is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# system-notifier is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with system-notifier.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Dummy plugin to demonstrate the plugin architecture and the capabilities of the
 PluginContext.
@@ -6,6 +21,7 @@ This plugin is intended as a template and extended documentation for creating
 your own plugins. When activated, it performs a series of actions to
 demonstrate the various functions of the `ctx` object passed to the constructor.
 """
+
 from gi.repository import GLib
 from main import PluginContext
 import pydbus

@@ -1,6 +1,6 @@
-# D-Bus Notifier
+# System Notifier
 
-A simple and extensible system event monitor for Linux that uses D-Bus to listen for events and sends desktop notifications.
+A simple and extensible system event monitor for Linux that provides a framework for sending desktop notifications based on various system events.
 
 ## Features
 
@@ -51,12 +51,50 @@ sudo apt-get install pulseaudio-utils
 
 ## Installation
 
+There are two ways to install system-notifier:
+
+### 1. Manual Installation
+
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/your-username/dbus-notifier.git
-    cd dbus-notifier
+    git clone https://github.com/your-username/system-notifier.git
+    cd system-notifier
     ```
 2.  Install the dependencies as described above.
+
+### 2. Using the Install Script (Recommended)
+
+The project includes an installation script that sets up a systemd user service. This will automatically start the notifier when you log in.
+
+1.  Clone the repository (if you haven't already):
+    ```bash
+    git clone https://github.com/your-username/system-notifier.git
+    cd system-notifier
+    ```
+2.  Run the install script:
+    ```bash
+    ./install.sh
+    ```
+
+The script will:
+*   Create a systemd service file in `~/.config/systemd/user/`.
+*   Reload the systemd user daemon.
+*   Enable and start the `system-notifier.service`.
+
+You can check the status of the service with `systemctl --user status system-notifier.service`.
+
+### Uninstallation
+
+To uninstall the service and remove all related files, run the `uninstall.sh` script:
+
+```bash
+./uninstall.sh
+```
+
+This will:
+*   Stop and disable the systemd service.
+*   Remove the service file.
+*   Remove the icon cache directory.
 
 ## Usage
 
@@ -156,4 +194,4 @@ class Plugin:
 
 ## License
 
-This project is not licensed. Consider adding an open-source license like MIT.
+This project is licensed under the GNU General Public License v3.0. See the [COPYING](COPYING) file for the full license text.
