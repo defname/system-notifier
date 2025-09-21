@@ -1,6 +1,5 @@
 """Plugin to show power supply and battery notifications."""
 
-import dbus
 from main import PluginContext
 
 # fallback configuration
@@ -28,7 +27,8 @@ class Plugin:
     def __init__(self, ctx: PluginContext):
         self.ctx = ctx
 
-        self.bus = self.ctx.system_bus
+        self.bus = ctx.system_bus
+
 
         self.messages = {
             "on": self.ctx.get_config("on_message", fallback=ON_MESSAGE),
@@ -50,33 +50,22 @@ class Plugin:
         """Find power supply and battery devices."""
         try:
             # choose proxy and interface
-            upower_proxy = self.bus.get_object('org.freedesktop.UPower', '/org/freedesktop/UPower')
-            upower_interface = dbus.Interface(upower_proxy, 'org.freedesktop.UPower')
+            upower = self.bus.get("org.freedesktop.UPower")
 
             # find the correct devices
-            for device_path in upower_interface.EnumerateDevices():
-                device_proxy = self.bus.get_object('org.freedesktop.UPower', device_path)
-                props_iface = dbus.Interface(device_proxy, 'org.freedesktop.DBus.Properties')
-                all_props = props_iface.GetAll('org.freedesktop.UPower.Device')
-
-                device_type = all_props.get('Type')
+            for device_path in upower.EnumerateDevices():
+                device = self.bus.get("org.freedesktop.UPower", device_path)
+                device_type = device.Type
 
                 if device_type == DEVICE_TYPE_LINE_POWER: # Line Power
                     self.ctx.log(f"Power device found: {device_path}")
-                    self.bus.add_signal_receiver(
-                        self.handle_line_power_change,
-                        signal_name='PropertiesChanged',
-                        dbus_interface='org.freedesktop.DBus.Properties',
-                        path=device_path, arg0='org.freedesktop.UPower.Device')
+                    device.onPropertiesChanged = self.handle_line_power_change
                 elif device_type == DEVICE_TYPE_BATTERY: # Battery
                     self.ctx.log(f"Battery found: {device_path}")
-                    self.bus.add_signal_receiver(
-                        self.handle_battery_change,
-                        signal_name='PropertiesChanged',
-                        dbus_interface='org.freedesktop.DBus.Properties',
-                        path=device_path, arg0='org.freedesktop.UPower.Device')
-        except dbus.exceptions.DBusException as e:
-            print(f"Connection to UPower failed: {e}")
+                    device.onPropertiesChanged = self.handle_battery_change
+
+        except Exception as e:
+            self.ctx.log(f"Connection to UPower failed: {e}")
 
     def handle_line_power_change(self, interface_name, changed_properties, invalidated_properties):
         """Handle power supply signals."""
