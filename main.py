@@ -15,12 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with system-notifier.  If not, see <http://www.gnu.org/licenses/>.
 
-import importlib
 import sys
 import configparser
 import argparse
-from typing import Literal
-import pydbus
 from dbus.mainloop.glib import DBusGMainLoop
 import gi
 gi.require_version("Gtk", "3.0")
