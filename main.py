@@ -5,7 +5,7 @@ import sys
 import configparser
 import argparse
 from typing import Literal
-import dbus
+import pydbus
 from dbus.mainloop.glib import DBusGMainLoop
 import gi
 gi.require_version("Gtk", "3.0")
@@ -18,6 +18,7 @@ APP_VERSION      = "0.1"
 CONFIG_FILES = ["config.ini", ]
 LOG_FILE = sys.stderr
 LOG_TAG_WIDTH = 10
+DEFAULT_PLUGIN_LIST = "battery, volume, iwd"
 
 
 def log(*args, tag="main", **kwargs):
@@ -27,11 +28,15 @@ def log(*args, tag="main", **kwargs):
 
 class PluginContext:
     """A container for shared ressources passed to each plugin."""
-    def __init__(self, plugin_name, config, system_bus, session_bus):
+    def __init__(self, plugin_name, config, system_bus: pydbus.SystemBus, session_bus: pydbus.SessionBus):
         self.config = config
+        self.plugin = plugin_name
         self.system_bus = system_bus
         self.session_bus = session_bus
-        self.plugin = plugin_name
+
+        global_timeout = self.config.get("main", "timeout", fallback=0)
+        self.notification_timeout = int(self.get_config("timeout", fallback=global_timeout))
+        
         self.active_notifications = {}
     
     def log(self, *args, **kwargs):
@@ -47,7 +52,9 @@ class PluginContext:
                body: str = "",
                icon: str = "",
                urgency: Literal["low", "normal", "critical"] = "normal",
-               replace_id: str = None):
+               timeout: int = None,
+               replace_id: str = None,
+               progress: int = None):
         """Send a desktop notification"""
         urgency_map = {
             "low": Notify.Urgency.LOW,
@@ -63,6 +70,11 @@ class PluginContext:
             notification_to_show = Notify.Notification.new(summary, body, icon)
 
         notification_to_show.set_urgency(urgency_map.get(urgency, "normal"))
+        notification_to_show.set_timeout(timeout if timeout is not None
+                                         else self.notification_timeout)
+        if progress is not None:
+            notification_to_show.set_hint("value", GLib.Variant.new_int32(progress))
+
         notification_to_show.show()
 
         if replace_id:
@@ -78,9 +90,9 @@ class PluginContext:
 def load_plugins(config, system_bus, session_bus):
     """Loads all enabled plugins from the 'plugins' directory."""
     enabled_plugins = [p.strip() for p
-                       in config.get("main", "enabled_plugins", fallback="")
+                       in config.get("main", "enabled_plugins", fallback=DEFAULT_PLUGIN_LIST)
                                 .split(",") if p.strip()]
-    print(f"[main] Enabled plugins: {', '.join(enabled_plugins) if enabled_plugins else 'None'}")
+    log(f"Enabled plugins: {', '.join(enabled_plugins) if enabled_plugins else 'None'}")
 
     loaded_plugins = []
     for plugin_name in enabled_plugins:
@@ -91,12 +103,13 @@ def load_plugins(config, system_bus, session_bus):
                 context = PluginContext(plugin_name, config, system_bus, session_bus)
                 plugin_instance = module.Plugin(context)
                 loaded_plugins.append(plugin_instance)
-                print(f"[main] Plugin loaded: {module_name}")
+                log("Plugin loaded", tag=plugin_name)
         except Exception as e:
-            print(f"[main] Error while loading plugin {module_name}: {e}")
+            log(f"Error while loading plugin: {e}", tag=plugin_name)
     return loaded_plugins
 
 def init_argparse():
+    """Initialize the argument parser."""
     parser = argparse.ArgumentParser(
         prog=PROG_NAME,
         description="A simple system event monitor and notifier.",
@@ -112,7 +125,7 @@ def main():
     try:
         args = argparser.parse_args()
     except argparse.ArgumentError:
-        return 1
+        return
 
 
     # load config
@@ -122,25 +135,19 @@ def main():
         loaded_files = config.read(args.config)
         if not loaded_files:
             log(f"Config file {args.config} not found.")
-            return 1
+            return
     else:
         loaded_files = config.read(CONFIG_FILES)
         if not loaded_files:
             log("No configuration files found.")
 
-    # initi D-Bus und GLib Main Loop
+    # init dbus and GLib Main Loop
+    system_bus = pydbus.SystemBus()
+    session_bus = pydbus.SessionBus()
     DBusGMainLoop(set_as_default=True)
-    system_bus = dbus.SystemBus()
-    session_bus = dbus.SessionBus()
 
     # init libnotify
     Notify.init(PROG_NAME)
-
-    # set list of activated plugins
-    enabled_plugins = [ p.strip() for p
-                       in config.get("main", "enabled_plugins", fallback="volume, battery")
-                                .split(",") ]
-    log(f"Enabled plugins: {", ".join(enabled_plugins)}")
 
     # available_plugin_files = [f for f in os.listdir(plugin_dir) if f.endswith(".py") and not f.startswith("__")]
     loaded_plugins = load_plugins(config, system_bus, session_bus)
@@ -154,7 +161,8 @@ def main():
     try:
         loop.run()
     except KeyboardInterrupt:
-        log("\nGoodby =)")
+        print(file=LOG_FILE)
+        log("Goodby =)")
     finally:
         Notify.uninit()
 
